@@ -1,8 +1,8 @@
 {
   "required": true,
-  "package": "com.example.examplemod.mixin",
+  "package": "tfar.schematicitems.mixin",
   "compatibilityLevel": "JAVA_16",
-  "refmap": "examplemod.refmap.json",
+  "refmap": "schematicitems.refmap.json",
   "mixins": [
   ],
   "client":[
