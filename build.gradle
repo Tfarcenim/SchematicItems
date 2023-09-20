@@ -177,11 +177,20 @@ dependencies {
     // runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}") // Adds the full JEI mod as a runtime dependency
     // implementation fg.deobf("com.tterrag.registrate:Registrate:MC${mc_version}-${registrate_version}") // Adds registrate as a dependency
 
-    implementation "com.sk89q.worldedit:worldedit-core:7.3.0-SNAPSHOT"
+    minecraftLibrary("com.sk89q.worldedit:worldedit-core:7.2.12") {
+        exclude group: "com.google.guava"
+        exclude group: "com.google.code.gson"
+        exclude group: "it.unimi.dsi"
+        exclude group: "org.apache.logging.log4j"
+        exclude group: "org.antlr"
+    }
+
+    implementation fg.deobf("com.sk89q.worldedit:worldedit-forge-mc1.19.2:7.2.12")
+
 
     // Examples using mod jars from ./libs
     // implementation fg.deobf("blank:coolmod-${mc_version}:${coolmod_version}")
-    annotationProcessor 'org.spongepowered:mixin:0.8.4:processor'
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // For more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
