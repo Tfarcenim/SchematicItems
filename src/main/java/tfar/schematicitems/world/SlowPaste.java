@@ -23,15 +23,18 @@ import org.apache.commons.lang3.tuple.Pair;
 public class SlowPaste {
 
     private int speed;
+    private boolean noAir;
     private Pair<BlockState, CompoundTag>[][][] blocks;
     private Vec3i volume;
     private BlockPos start;
+    private Vec3i origin;
     private int progress;
 
-    public static SlowPaste create(BlockPos start, Clipboard clipboard, int speed) {
+    public static SlowPaste create(BlockPos start, Clipboard clipboard, int speed,boolean noAir) {
         SlowPaste slowPaste = new SlowPaste();
         slowPaste.start = start;
         slowPaste.speed = speed;
+        slowPaste.noAir = noAir;
         slowPaste.loadFromClipboard(clipboard);
         return slowPaste;
     }
@@ -40,6 +43,10 @@ public class SlowPaste {
         Region region = clipboard.getRegion();
         BlockVector3 blockVector3min = region.getMinimumPoint();
         BlockVector3 blockVector3max = region.getMaximumPoint();
+
+        BlockVector3 schemOrigin = clipboard.getOrigin();
+
+        origin = ForgeAdapter.toBlockPos(schemOrigin).subtract(ForgeAdapter.toBlockPos(blockVector3min));
 
         volume = ForgeAdapter.toBlockPos(clipboard.getDimensions());
 
@@ -80,15 +87,16 @@ public class SlowPaste {
     public void tick(ServerLevel level) {
         for (int i = 0; i < speed; i++) {
             Vec3i index = getIndex();
-            BlockPos offset = start.offset(index);
+            BlockPos offset = start.offset(index).subtract(origin);
             Pair<BlockState, CompoundTag> pair = blocks[index.getX()][index.getY()][index.getZ()];
             BlockState blockState = pair.getLeft();
-            level.setBlock(offset, blockState, 11);
-            CompoundTag compoundTag = pair.getRight();
-            if (compoundTag != null) {
-                setTileEntity(level, offset, compoundTag);
+            if (!blockState.isAir() || !noAir) {
+                level.setBlock(offset, blockState, 11);
+                CompoundTag compoundTag = pair.getRight();
+                if (compoundTag != null) {
+                    setTileEntity(level, offset, compoundTag);
+                }
             }
-
             progress++;
             if (finished()) return;
         }
@@ -119,9 +127,11 @@ public class SlowPaste {
     public CompoundTag save() {
         CompoundTag compoundTag = new CompoundTag();
         compoundTag.putInt("speed", speed);
+        compoundTag.putBoolean("noAir",noAir);
         compoundTag.put("blocks", saveBlocks());
         compoundTag.putIntArray("volume", new int[]{volume.getX(), volume.getY(), volume.getZ()});
         compoundTag.putIntArray("start", new int[]{start.getX(), start.getY(), start.getZ()});
+        compoundTag.putIntArray("origin", new int[]{origin.getX(), origin.getY(), origin.getZ()});
         compoundTag.putInt("progress", progress);
         return compoundTag;
     }
@@ -129,10 +139,13 @@ public class SlowPaste {
     public static SlowPaste loadFromTag(CompoundTag tag) {
         SlowPaste slowPaste = new SlowPaste();
         slowPaste.speed = tag.getInt("speed");
+        slowPaste.noAir = tag.getBoolean("noAir");
         int[] ints = tag.getIntArray("volume");
         slowPaste.volume = new Vec3i(ints[0], ints[1], ints[2]);
         int[] ints2 = tag.getIntArray("start");
         slowPaste.start = new BlockPos(ints2[0], ints2[1], ints2[2]);
+        int[] ints3 = tag.getIntArray("origin");
+        slowPaste.origin = new Vec3i(ints3[0], ints3[1], ints3[2]);
         slowPaste.loadBlocks(tag.getList("blocks", Tag.TAG_COMPOUND));
         slowPaste.progress = tag.getInt("progress");
         return slowPaste;

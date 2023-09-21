@@ -37,8 +37,8 @@ public class SlowPasteSavedData extends SavedData {
                 .computeIfAbsent(SlowPasteSavedData::loadStatic, SlowPasteSavedData::new, SchematicItems.MODID+"_"+level.dimension().location());
     }
 
-    public void addSlowPasteData(BlockPos start, Clipboard clipboard, int speed) {
-        SlowPaste slowPaste = SlowPaste.create(start,clipboard,speed);
+    public void addSlowPasteData(BlockPos start, Clipboard clipboard, int speed,boolean noAir) {
+        SlowPaste slowPaste = SlowPaste.create(start,clipboard,speed,noAir);
         pastes.add(slowPaste);
         setDirty();
     }

@@ -1,6 +1,7 @@
 package tfar.schematicitems;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -39,9 +40,12 @@ public class SlowLoadSchematicCommand {
                 Commands.literal("slowpaste")
                         .then(Commands.argument("schematic", StringArgumentType.string())
                                 .then(Commands.argument("position", BlockPosArgument.blockPos())
-                                        .executes(context -> slowloadSchematic(context, 256))
+                                        .executes(context -> slowloadSchematic(context, 256,false))
                                         .then(Commands.argument("speed", IntegerArgumentType.integer(1))
-                                                .executes(SlowLoadSchematicCommand::slowloadSchematic)
+                                                .executes(context -> slowloadSchematic(context,false))
+                                                .then(Commands.argument("noAir", BoolArgumentType.bool())
+                                                        .executes(SlowLoadSchematicCommand::slowloadSchematic)
+                                                )
                                         )
                                 )
                         )
@@ -49,28 +53,33 @@ public class SlowLoadSchematicCommand {
     }
 
     public static int slowloadSchematic(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        int speed = IntegerArgumentType.getInteger(ctx, "speed");
-        return slowloadSchematic(ctx, speed);
+        boolean noAir = BoolArgumentType.getBool(ctx,"noAir");
+        return slowloadSchematic(ctx, noAir);
     }
 
-    public static int slowloadSchematic(CommandContext<CommandSourceStack> ctx, int speed) throws CommandSyntaxException {
+    public static int slowloadSchematic(CommandContext<CommandSourceStack> ctx,boolean noAir) throws CommandSyntaxException {
+        int speed = IntegerArgumentType.getInteger(ctx, "speed");
+        return slowloadSchematic(ctx, speed,noAir);
+    }
+
+    public static int slowloadSchematic(CommandContext<CommandSourceStack> ctx, int speed,boolean noAir) throws CommandSyntaxException {
         String schematic = StringArgumentType.getString(ctx, "schematic");
         BlockPos pos = BlockPosArgument.getLoadedBlockPos(ctx, "position");
         ServerLevel level = ctx.getSource().getLevel();
 
-        Clipboard clipboard = getSchematicForLoading(level,schematic);
+        Clipboard clipboard = getSchematicForLoading(level, schematic);
 
         if (clipboard != null) {
             SlowPasteSavedData slowPasteSavedData = SlowPasteSavedData.loadFromLevel(level);
-            slowPasteSavedData.addSlowPasteData(pos,clipboard,speed);
-            ctx.getSource().sendSuccess(Component.literal("Schematic "+schematic+" successfully added to building queue"),true);
+            slowPasteSavedData.addSlowPasteData(pos, clipboard, speed,noAir);
+            ctx.getSource().sendSuccess(Component.literal("Schematic " + schematic + " successfully added to building queue"), true);
             return 1;
         }
-        ctx.getSource().sendFailure(Component.literal("Something went wrong while trying to load schematic "+schematic));
+        ctx.getSource().sendFailure(Component.literal("Something went wrong while trying to load schematic " + schematic));
         return 0;
     }
 
-    public static Clipboard getSchematicForLoading(ServerLevel level,String schematic) {
+    public static Clipboard getSchematicForLoading(ServerLevel level, String schematic) {
 
         String formatName = "sponge";
 
@@ -105,7 +114,7 @@ public class SlowLoadSchematicCommand {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
