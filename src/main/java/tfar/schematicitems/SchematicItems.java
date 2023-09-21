@@ -1,6 +1,9 @@
 package tfar.schematicitems;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -13,6 +16,7 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegisterEvent;
 import org.slf4j.Logger;
+import tfar.schematicitems.datagen.ModDatagen;
 
 import java.util.stream.Collectors;
 
@@ -28,9 +32,21 @@ public class SchematicItems {
         IEventBus bus  = FMLJavaModLoadingContext.get().getModEventBus();
         // Register the setup method for modloading
         bus.addListener(this::setup);
+        bus.addListener(ModDatagen::gather);
+        bus.addListener(this::register);
+        MinecraftForge.EVENT_BUS.addListener(SchematicItem::worldTick);
+    }
+
+    private void register(RegisterEvent e) {
+        e.register(Registry.ITEM_REGISTRY,new ResourceLocation(MODID,"schematic_item"),() -> Items.SCHEMATIC_ITEM);
     }
 
     private void setup(final FMLCommonSetupEvent event) {
 
     }
+
+    public static class Items {
+        public static final Item SCHEMATIC_ITEM = new SchematicItem(new Item.Properties());
+    }
+
 }
